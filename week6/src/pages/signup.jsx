@@ -2,7 +2,8 @@
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-//import useForm from '../hooks/use-form.js';
+import { axiosInstance } from '../axios-instance';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const SignupPage = () => {
@@ -17,15 +18,33 @@ const SignupPage = () => {
             .string()
             .oneOf([yup.ref('password'), null], '비밀번호가 일치하지 않습니다.') // 비밀번호와 일치하는지 확인
             .required('비밀번호 검증 또한 필수 입력요소입니다.'),
-    });
 
+    });
+    
     const { register, handleSubmit, formState: { errors, isValid } } = useForm({
         resolver: yupResolver(schema),
         mode: 'onChange', // 입력 시 즉시 유효성 검사를 수행
     });
+    const navigate = useNavigate(); // 페이지 이동을 위한 navigate 사용
 
-    const onSubmit = (data) => {
-        console.log('폼 데이터 제출:', data);
+    const onSubmit = async (data) => {
+        console.log(data.email, data.password, data.passwordCheck);  
+        try {
+            // 회원가입 API 요청
+            const response=await axiosInstance.post('/auth/register',{
+                email: data.email,
+            password: data.password,
+            passwordCheck: data.passwordCheck,
+            });
+            // 회원가입 성공 후 로그인 페이지로 리디렉션
+            console.log("회원가입 성공: ", response.data);
+            alert('회원가입이 완료되었습니다!');
+            navigate('/login'); // 로그인 페이지로 이동
+
+        } catch (error) {
+            console.log("회원가입 실패: ", error);
+            alert('회원가입 실패. 다시 시도해주세요!');
+        }
     };
 
     return (
@@ -45,7 +64,7 @@ const SignupPage = () => {
                 {errors.passwordCheck && <ErrorMessage>{errors.passwordCheck.message}</ErrorMessage>}
             </div>
 
-            <SubmitButton type="submit" value="제출" disabled={!isValid} />
+            <Button type="submit" disabled={!isValid}>제출</Button>
         </Container>
     );
 
@@ -62,7 +81,7 @@ const Container = styled.form`
 const Title = styled.h1`
     font-size: 30px;
     text-align: center;
-    color: #333;
+    color: hotpink;
     margin-bottom: 20px;
 `;
 
@@ -88,7 +107,7 @@ const ErrorMessage = styled.p`
     margin: 0 0 16px 0;
 `;
 
-const SubmitButton = styled.input`
+const Button = styled.button`
     width: 100%;
     height:50px;
     padding: 10px;

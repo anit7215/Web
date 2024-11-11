@@ -3,7 +3,6 @@ import styled from "styled-components";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-// eslint-disable-next-line react/prop-types
 const MovieList = ({ url }) => {
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(true);

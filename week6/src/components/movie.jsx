@@ -15,6 +15,9 @@ const Movie = ({ movie }) => {
             <Date>
                 {movie.release_date}
             </Date>
+            <Overview>
+                {movie.overview}
+            </Overview>
         </Card>
     );
 };
@@ -58,4 +61,7 @@ const Title=styled.h2`
 `
 const Date=styled.h2`
     font-size:9px;
+`
+const Overview=styled.h4`
+    font-size:6px;
 `

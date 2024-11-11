@@ -5,7 +5,7 @@ const HomePage = () => {
     return (
         <>
         <h1>Home Page 야호~!</h1>
-        {<MovieList url={`${import.meta.env.VITE_TMDB_MOVIE_API_URL}/movie/top_rated`}/>} 
+        {<MovieList url="https://api.themoviedb.org/3/movie/top_rated?language=en-US&page=1" />} 
         </>
         
     );

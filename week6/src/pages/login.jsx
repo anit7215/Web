@@ -3,11 +3,11 @@ import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 //import useForm from '../hooks/use-form.js';
+import axios from 'axios';
 import styled from 'styled-components';
-import { validateLogin } from '../utils/validate.';
-import {axiosInstanceBe,setAuthToken} from '../api';
+import { validateLogin } from '../utils/validate';
+import { axiosInstance, setAuthToken } from '../axios-instance'; 
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 // 실습2
 // const LoginPage = () => {
@@ -47,9 +47,26 @@ const LoginPage = () => {
         resolver: yupResolver(schema),
         mode: 'onChange', 
     });
+    const navigate = useNavigate(); //페이지 이동을 위한 navigate사용
+    const onSubmit = async (data) => {
+        try {
+            // 로그인 API 요청
+            const response = await axios.post('/api/login', {
+                email: data.email,
+                password: data.password,
+            });
 
-    const onSubmit = (data) => {
-        console.log('폼 데이터 제출:', data);
+            // 서버에서 반환된 토큰을 localStorage에 저장
+            localStorage.setItem('accessToken', response.data.accessToken);
+            localStorage.setItem('refreshToken', response.data.refreshToken);
+
+            // 로그인 성공 후 메인 페이지로 리디렉션
+            navigate('/home'); // 메인 페이지로 이동
+
+        } catch (error) {
+            console.error('로그인 실패:', error);
+            alert('로그인 실패. 이메일과 비밀번호를 다시 확인해주세요!');
+        }
     };
 
     return (
@@ -65,7 +82,7 @@ const LoginPage = () => {
                 {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
             </div>
 
-            <button type="submit" value="로그인" disabled={!isValid} />
+            <Button type="submit" disabled={!isValid}>로그인</Button>
         </Container>
     );
 };
@@ -83,7 +100,7 @@ const Container = styled.form`
 const Title = styled.h1`
     font-size: 30px;
     text-align: center;
-    color: #333;
+    color: white;
     margin-bottom: 20px;
 `;
 
@@ -109,7 +126,7 @@ const ErrorMessage = styled.p`
     margin: 0 0 16px 0;
 `;
 
-const SubmitButton = styled.input`
+const Button = styled.button`
     width: 100%;
     height:50px;
     padding: 10px;
