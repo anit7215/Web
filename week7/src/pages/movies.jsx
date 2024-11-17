@@ -1,73 +1,108 @@
-import MovieList from "../components/movieList";
+import { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import MovieList from "../components/movieList";
+import SkeletonLoader from "../components/skeleton"; 
+import LoadingSpinner from '../components/loadingSpinner'; 
+import { useInView } from "react-intersection-observer"; 
 
 const MoviesPage = () => {
     const { category } = useParams(); // 동적 경로의 category 파라미터 가져오기
 
-    // category에 따라 URL을 설정하는 매핑 객체
     const apiUrls = {
-        "popular": "https://api.themoviedb.org/3/movie/popular?language=ko-KR&page=1",
-        "now-playing": "https://api.themoviedb.org/3/movie/now_playing?language=ko-KR&page=1",
-        "top-rated": "https://api.themoviedb.org/3/movie/top_rated?language=ko-KR&page=1",
-        "up-coming": "https://api.themoviedb.org/3/movie/upcoming?language=ko-KR&page=1"
+        "popular": "https://api.themoviedb.org/3/movie/popular?language=ko-KR&page=",
+        "now-playing": "https://api.themoviedb.org/3/movie/now_playing?language=ko-KR&page=",
+        "top-rated": "https://api.themoviedb.org/3/movie/top_rated?language=ko-KR&page=",
+        "up-coming": "https://api.themoviedb.org/3/movie/upcoming?language=ko-KR&page=",
     };
 
-    // 현재 category에 맞는 URL을 전달
     const url = apiUrls[category];
 
-    if (!url) {
-        return <div><h1 style={{ color: 'white' }}>잘못된 카테고리입니다.</h1></div>;
-    }
-
-    // useQuery를 활용한 데이터 요청
     const {
-        data: movies,
+        data,
         isLoading,
         isError,
         error,
-    } = useQuery({
-        queryKey: ["movies", category], // 쿼리 키
-        queryFn: async () => {
-            const response = await fetch(url, {
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useInfiniteQuery({
+        queryKey: ["movies", category], 
+        queryFn: async ({ pageParam = 1 }) => {
+            const response = await fetch(`${url}${pageParam}`, {
                 headers: {
-                    Authorization: `Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYzU5M2Y2YTg3ZjE3Nzk2NTdmZjYyMjliNzU1NWE5NiIsIm5iZiI6MTczMDAzODI1Ny4zMjAxNTcsInN1YiI6IjY3MTdhODE1OGUwNWE4YzlhODRkMzZlNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sLVjVxyqWXBp0_Nsg7IQ0wZKtR24EpoGWu4M-2cbmH4` 
+                    Authorization: `Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYzU5M2Y2YTg3ZjE3Nzk2NTdmZjYyMjliNzU1NWE5NiIsIm5iZiI6MTczMDAzODI1Ny4zMjAxNTcsInN1YiI6IjY3MTdhODE1OGUwNWE4YzlhODRkMzZlNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sLVjVxyqWXBp0_Nsg7IQ0wZKtR24EpoGWu4M-2cbmH4`
                 }
             });
             if (!response.ok) {
                 throw new Error("Failed to fetch movies");
             }
-            const data = await response.json();
-            console.log(data); // API 응답 내용 확인
-            return data;
+            return await response.json();
+        },
+        getNextPageParam: (lastPage) => {
+            return lastPage.page < lastPage.total_pages ? lastPage.page + 1 : false;
         },
     });
 
-    // 로딩 상태 처리
-    if (isLoading) {
+    // 로딩 처리
+    const [loadingDelay, setLoadingDelay] = useState(true);
+    useEffect(() => {
+        if (isLoading) {
+            const timer = setTimeout(() => setLoadingDelay(false), 1000); 
+            return () => clearTimeout(timer);
+        }
+    }, [isLoading]);
+
+    // 에러 처리
+    if (isError) {
+        return <div style={{ color: 'white' }}>에러 발생: {error.message}</div>;
+    }
+
+    // IntersectionObserver 설정
+    const lastElementRef = useRef();
+    const { ref, inView } = useInView({
+        triggerOnce: false,
+        threshold: 1.0, // 화면 하단에 도달 시 트리거
+    });
+
+    useEffect(() => {
+        console.log(inView); // inView 값이 true로 바뀌는지 확인
+        if (inView && hasNextPage) {
+            fetchNextPage();
+        }
+    }, [inView, hasNextPage, fetchNextPage]);
+
+    if (isLoading && loadingDelay) {
         return (
             <div style={{ color: 'white' }}>
-                <h1>로딩 중...</h1>
+                <SkeletonLoader active paragraph={{ rows: 10 }} />
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <LoadingSpinner size="large" />
+                </div>
             </div>
         );
     }
 
-    // 에러 상태 처리
-    if (isError) {
-        return (
-            <div>
-                <h1 style={{ color: 'white' }}>에러 발생: {error.message}</h1>
-            </div>
-        );
-    }
-
-    console.log(movies?.results); // 영화 데이터 확인
-
-    if (movies && movies.results) {
-        return <MovieList url={url} />;
-    } else {
+    if (!data?.pages) {
         return <div>영화 데이터를 찾을 수 없습니다.</div>;
     }
+
+    return (
+        <div style={{ padding: '20px' }}>
+            <MovieList movies={data.pages.flatMap(page => page.results)} />
+            
+            {isFetchingNextPage && (
+                <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                    <SkeletonLoader />
+                    <LoadingSpinner />
+                </div>
+            )}
+
+            {hasNextPage && (
+                <div ref={ref} style={{ height: '20px' }} />
+            )}
+        </div>
+    );
 };
 
 export default MoviesPage;
