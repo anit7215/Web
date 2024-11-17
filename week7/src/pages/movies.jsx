@@ -26,6 +26,8 @@ const MoviesPage = () => {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        isPreviousData,
+        fetchPreviousPage,
     } = useInfiniteQuery({
         queryKey: ["movies", category], 
         queryFn: async ({ pageParam = 1 }) => {
@@ -42,6 +44,9 @@ const MoviesPage = () => {
         getNextPageParam: (lastPage) => {
             return lastPage.page < lastPage.total_pages ? lastPage.page + 1 : false;
         },
+        getPreviousPageParam: (firstPage) => {
+            return firstPage.page > 1 ? firstPage.page - 1 : false;
+        }
     });
 
     // 로딩 처리
@@ -66,7 +71,6 @@ const MoviesPage = () => {
     });
 
     useEffect(() => {
-        console.log(inView); // inView 값이 true로 바뀌는지 확인
         if (inView && hasNextPage) {
             fetchNextPage();
         }
@@ -86,6 +90,8 @@ const MoviesPage = () => {
     if (!data?.pages) {
         return <div>영화 데이터를 찾을 수 없습니다.</div>;
     }
+    console.log(data.pages);
+
 
     return (
         <div style={{ padding: '20px' }}>
@@ -101,6 +107,37 @@ const MoviesPage = () => {
             {hasNextPage && (
                 <div ref={ref} style={{ height: '20px' }} />
             )}
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                <button 
+                    onClick={() => fetchPreviousPage()} 
+                    disabled={data.pages[0].page === 1}
+                    style={{
+                        padding: '10px 20px',
+                        margin: '0 5px',
+                        backgroundColor: data.pages[0].page === 1 ? '#ccc' : 'pink',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: data.pages[0].page === 1 ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    이전
+                </button>
+                <button 
+                    onClick={() => fetchNextPage()} 
+                    disabled={!hasNextPage}
+                    style={{
+                        padding: '10px 20px',
+                        margin: '0 5px',
+                        backgroundColor: hasNextPage ? 'hotpink' : '#ccc',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: hasNextPage ? 'pointer' : 'not-allowed',
+                    }}
+                >
+                    다음
+                </button>
+            </div>
         </div>
     );
 };

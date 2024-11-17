@@ -13,7 +13,7 @@ const MovieList = ({ url }) => {
             try {
                 const response = await axios.get(url, {
                     headers: {
-                        Authorization: `Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYzU5M2Y2YTg3ZjE3Nzk2NTdmZjYyMjliNzU1NWE5NiIsIm5iZiI6MTczMDAzODI1Ny4zMjAxNTcsInN1YiI6IjY3MTdhODE1OGUwNWE4YzlhODRkMzZlNiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.sLVjVxyqWXBp0_Nsg7IQ0wZKtR24EpoGWu4M-2cbmH4`
+                        Authorization: `Bearer YOUR_API_KEY`
                     }
                 });
                 setMovies(response.data.results); 
@@ -45,15 +45,7 @@ const CardList = styled.div`
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;
-    align-items: flex-start;  // 가운데 정렬보다 상단 정렬이 더 자연스러울 수 있음
+    align-items: flex-start;  // 상단 정렬
     min-height: 100vh;
     gap: 20px;  // 카드 간의 간격 설정
 `;
-
-
-// const CardList = styled.div`
-//     display: flex;
-//     flex-wrap: wrap;
-//     justify-content:space-evenly; 
-//     align-items: center;
-// `;
