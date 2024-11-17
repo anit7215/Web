@@ -9,28 +9,6 @@ import { validateLogin } from '../utils/validate';
 import { axiosInstance, setAuthToken } from '../axios-instance'; 
 import { useNavigate } from 'react-router-dom';
 
-// 실습2
-// const LoginPage = () => {
-//     const login=useForm({
-//         initialValue: {
-//             email:'',
-//             password:'',
-//         },
-//         validate: validateLogin
-//     })
-
-//     return(
-//         <Container>
-//             <Input error={login.touched.email && login.errors.email}type={'email'} placeholder={'이메일을 입력해주세요'} {...login.getTextInputProps('email')} />
-//             {login.touched.email && login.errors.email && <ErrorText>{login.errors.email}</ErrorText>}
-//             <Input error={login.touched.password && login.errors.password} type={'password'} placeholder={'비밀번호를 입력해주세요'}{...login.getTextInputProps('password')} />
-//             {login.touched.password && login.errors.password && <ErrorText>{login.errors.password}</ErrorText>}
-
-//             <SubmitButton type="submit" value="로그인" disabled={!isValid} />
-//         </Container>
-//     );
-
-// };
 
  // 실습1 버전
 const LoginPage = () => {

@@ -1,39 +1,12 @@
-// login.jsx
+// signup.jsx
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-//import useForm from '../hooks/use-form.js';
-import axios from 'axios';
-import styled from 'styled-components';
-import { validateLogin } from '../utils/validate';
-import { axiosInstance, setAuthToken } from '../axios-instance'; 
+import { axiosInstance } from '../axios-instance';
 import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 
-// 실습2
-// const LoginPage = () => {
-//     const login=useForm({
-//         initialValue: {
-//             email:'',
-//             password:'',
-//         },
-//         validate: validateLogin
-//     })
-
-//     return(
-//         <Container>
-//             <Input error={login.touched.email && login.errors.email}type={'email'} placeholder={'이메일을 입력해주세요'} {...login.getTextInputProps('email')} />
-//             {login.touched.email && login.errors.email && <ErrorText>{login.errors.email}</ErrorText>}
-//             <Input error={login.touched.password && login.errors.password} type={'password'} placeholder={'비밀번호를 입력해주세요'}{...login.getTextInputProps('password')} />
-//             {login.touched.password && login.errors.password && <ErrorText>{login.errors.password}</ErrorText>}
-
-//             <SubmitButton type="submit" value="로그인" disabled={!isValid} />
-//         </Container>
-//     );
-
-// };
-
- // 실습1 버전
-const LoginPage = () => {
+const SignupPage = () => {
     const schema = yup.object().shape({
         email: yup.string().email('올바른 이메일 형식이 아닙니다. 다시 확인해주세요!').required('이메일을 반드시 입력해주세요.'),
         password: yup
@@ -41,37 +14,42 @@ const LoginPage = () => {
             .min(8, '비밀번호는 8 ~ 16자 사이로 입력해주세요!')
             .max(16, '비밀번호는 8 ~ 16자 사이로 입력해주세요!')
             .required('비밀번호를 반드시 입력해주세요.'),
-    });
+        passwordCheck: yup
+            .string()
+            .oneOf([yup.ref('password'), null], '비밀번호가 일치하지 않습니다.') // 비밀번호와 일치하는지 확인
+            .required('비밀번호 검증 또한 필수 입력요소입니다.'),
 
+    });
+    
     const { register, handleSubmit, formState: { errors, isValid } } = useForm({
         resolver: yupResolver(schema),
-        mode: 'onChange', 
+        mode: 'onChange', // 입력 시 즉시 유효성 검사를 수행
     });
-    const navigate = useNavigate(); //페이지 이동을 위한 navigate사용
+    const navigate = useNavigate(); // 페이지 이동을 위한 navigate 사용
+
     const onSubmit = async (data) => {
+        console.log(data.email, data.password, data.passwordCheck);  
         try {
-            // 로그인 API 요청 - axiosInstance 로 포트번호 맞추기.?
-            const response = await axiosInstance.post('/auth/login', {
+            // 회원가입 API 요청
+            const response=await axiosInstance.post('/auth/register',{
                 email: data.email,
-                password: data.password,
+            password: data.password,
+            passwordCheck: data.passwordCheck,
             });
-
-            // 서버에서 반환된 토큰을 localStorage에 저장
-            localStorage.setItem('accessToken', response.data.accessToken);
-            localStorage.setItem('refreshToken', response.data.refreshToken);
-
-            // 로그인 성공 후 메인 페이지로 리디렉션
-            navigate('/'); // 메인 페이지로 이동
+            // 회원가입 성공 후 로그인 페이지로 리디렉션
+            console.log("회원가입 성공: ", response.data);
+            alert('회원가입이 완료되었습니다!');
+            navigate('/login'); // 로그인 페이지로 이동
 
         } catch (error) {
-            console.error('로그인 실패:', error);
-            alert('로그인 실패. 이메일과 비밀번호를 다시 확인해주세요!');
+            console.log("회원가입 실패: ", error);
+            alert('회원가입 실패. 다시 시도해주세요!');
         }
     };
 
     return (
         <Container onSubmit={handleSubmit(onSubmit)}>
-            <Title>로그인</Title>
+            <Title>회원가입</Title>
             <div>
                 <Input type="email"{...register('email')}placeholder='이메일을 입력하세요.'hasError={!!errors.email}/>
                 {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
@@ -81,26 +59,29 @@ const LoginPage = () => {
                 <Input type="password"{...register('password')}placeholder='비밀번호를 입력하세요.' hasError={!!errors.password}/>
                 {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
             </div>
+            <div>
+                <Input type="password"{...register('passwordCheck')}placeholder='비밀번호를 다시 입력해주세요!' hasError={!!errors.passwordCheck}/>
+                {errors.passwordCheck && <ErrorMessage>{errors.passwordCheck.message}</ErrorMessage>}
+            </div>
 
-            <Button type="submit" disabled={!isValid}>로그인</Button>
+            <Button type="submit" disabled={!isValid}>제출</Button>
         </Container>
     );
+
 };
 
-
-export default LoginPage;
+export default SignupPage;
 
 const Container = styled.form`
     width: 300px;
     margin: auto;
     padding: 20px;
-    
 `;
 
 const Title = styled.h1`
     font-size: 30px;
     text-align: center;
-    color: white;
+    color: hotpink;
     margin-bottom: 20px;
 `;
 
@@ -110,7 +91,7 @@ const Input = styled.input`
     padding: 10px;  
     font-size: 14px;
     box-sizing:border-box;
-    padidng-bottom:8px;
+    padding-bottom:8px;
     border: 1px solid ${({ hasError }) => (hasError ? 'red' : '#ccc')};
     border-radius: 10px;
     outline: none;

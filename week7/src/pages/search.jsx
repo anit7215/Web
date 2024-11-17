@@ -70,7 +70,7 @@ const SearchPage = () => {
 
             <SearchResultsContainer>
                 {mq && movies.length === 0 && !isLoading && !isError && (
-                    <p>"해당하는 검색어 {mq}"에 해당하는 데이터가 없습니다</p>
+                    <p>해당하는 검색어 "{mq}"에 해당하는 데이터가 없습니다</p>
                 )}
                 {isLoading
                     ? Array.from({ length: 10 }).map((_, index) => (
