@@ -1,61 +1,112 @@
-import {createContext, useState} from 'react';
-//데이터를 담고있엄.
-export const TodoContext=createContext();
+// TodoContext.jsx
+import { createContext, useContext } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import useFetch from "../hooks/useFetch";
 
-//우산을 만들어..
-export function TodoContextProvider({children}){
-    //투두리스트, 화면에 출력되는 (추가, 삭제, 수정)
-    const [todos,setTodos]=useState([
-        {id:1, task: '투두 만들어보기'}, 
-        {id:2, task: '희연 혜원 혜윤 건 찬민'},
-    ]);
-    const [text,setText]=useState('');
-    const [editingId,setEditingId]=useState('');
-    const [editText,setEditText]=useState('');
+export const TodoContext = createContext();  // 여기에서 TodoContext를 export 해야 함
 
-    //렌더링 방지
-    const handleSubmit = (e) => {
-        e.preventDefault();
-    };
-    //1.추가하기
-    const addTodo=()=>{
-        setTodos((prev)=>[
-            ...prev,{id:Math.floor(Math.random()*100)+2,task:text},
-        ]);
-        setText('');
-    };
-    //2.삭제하기
-    const deleteTodo=(id)=>{
-        setTodos((prev)=>prev.filter((item)=>item.id!==id));
-    };
-    //3. 수정하기
-    const updateTodo=(id,text)=>{
-        setTodos((prev)=>
-            prev.map((item)=>
-                (item.id===id ? {...item, task:text} : item)
-            ));
-        setEditingId('');
-    };
-    return(
-        <TodoContext.Provider value={{
-            todos,
-            setTodos,
-            text,
-            setText,
-            editingId,
-            setEditingId,
-            editText,
-            setEditText,
-            handleSubmit,
-            addTodo,
-            deleteTodo,
-            updateTodo, 
-        }}>
- 
-        {children}
-        </TodoContext.Provider>
-       
-    );
+export function TodoContextProvider({ children }) {
+  const queryClient = useQueryClient();
 
+  // Todos 조회
+  const { data: todos = [], isLoading, error } = useQuery({
+    queryKey: ["todos"],
+    queryFn: async () => {
+      const response = await useFetch("/todo");
+      return response.data;
+    },
+  });
 
-};
+  // Todo 상세 조회
+  const fetchTodoById = async (id) => {
+    const response = await useFetch(`/todo/${id}`);
+    return response.data;
+  };
+
+  // Todo 추가
+  const addTodoMutation = useMutation({
+    mutationFn: async (newTodo) => {
+      const response = await useFetch("/todo", {
+        method: "POST",
+        body: JSON.stringify(newTodo),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["todos"]);
+    },
+    onError: (error) => {
+      console.error("Error adding todo:", error);
+    },
+  });
+
+  const addTodo = (todo) => {
+    addTodoMutation.mutate(todo);
+  };
+
+  // Todo 삭제
+  const deleteTodoMutation = useMutation({
+    mutationFn: async (id) => {
+      await useFetch(`/todo/${id}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries("todos");
+    },
+    onError: (error) => {
+      console.error("Error deleting todo:", error);
+    },
+  });
+
+  const deleteTodo = (id) => {
+    deleteTodoMutation.mutate(id);
+  };
+
+  // Todo 수정
+  const updateTodoMutation = useMutation({
+    mutationFn: async ({ id, updatedTodo }) => {
+      const response = await useFetch(`/todo/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(updatedTodo),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["todos"]);
+    },
+    onError: (error) => {
+      console.error("Error updating todo:", error);
+    },
+  });
+
+  const updateTodo = (id, updatedTodo) => {
+    updateTodoMutation.mutate({ id, updatedTodo });
+  };
+
+  return (
+    <TodoContext.Provider
+      value={{
+        todos,
+        isLoading,
+        error,
+        addTodo,
+        deleteTodo,
+        updateTodo,
+        fetchTodoById,
+      }}
+    >
+      {children}
+    </TodoContext.Provider>
+  );
+}
+
+export function useTodos() {
+  return useContext(TodoContext);
+}
