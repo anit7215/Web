@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import styled from "styled-components";
 import CartItem from "./CartItem";
 import { clearCart, calculateTotals } from "../features/cart/cartSlice";
+import { openModal } from "../features/modal/modalSlice";
 
 const CartContainer = () => {
   const { carts, totalQuantity, totalAmount } = useSelector((state) => state.carts);
@@ -27,7 +28,8 @@ const CartContainer = () => {
         <h4>
           총 금액: {totalAmount.toLocaleString()}원
         </h4>
-        <button onClick={() => dispatch(clearCart())}>장바구니 비우기</button>
+        {/* <button onClick={() => dispatch(clearCart())}>장바구니 비우기</button> */}
+        <button onClick={() => dispatch(openModal())}>장바구니 비우기</button>
       </FooterWrapper>
     </CartContainerWrapper>
   );
